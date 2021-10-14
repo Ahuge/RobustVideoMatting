@@ -49,6 +49,8 @@ def convert_video(model,
             The composition output path. File path if output_type == 'video'. Directory path if output_type == 'png_sequence'.
             If output_type == 'video', the composition has green screen background.
             If output_type == 'png_sequence'. the composition is RGBA png images.
+        bgr_source: A video file, image sequence directory, or an individual image.
+            This is only applicable if you choose output_type == video.
         output_alpha: The alpha output from the model.
         output_foreground: The foreground output from the model.
         seq_chunk: Number of frames to process at once. Increase it for better parallelism.
