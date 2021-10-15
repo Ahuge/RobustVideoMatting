@@ -13,14 +13,14 @@ class VideoReader(Dataset):
         self.video = pims.PyAVVideoReader(path)
         self.rate = self.video.frame_rate
         self.transform = transform
-        
+
     @property
     def frame_rate(self):
         return self.rate
-        
+
     def __len__(self):
         return len(self.video)
-        
+
     def __getitem__(self, idx):
         frame = self.video[idx]
         frame = Image.fromarray(np.asarray(frame))
@@ -94,7 +94,6 @@ class AudioVideoWriter(VideoWriter):
         )
 
     def remux_audio(self):
-        print("Remuxing Audio Stream #0")
         input_audio_container = self.source_audio_stream.container
         for packet in input_audio_container.demux(self.source_audio_stream):
             if packet.dts is None:
@@ -104,9 +103,7 @@ class AudioVideoWriter(VideoWriter):
 
     def close(self):
         self.remux_audio()
-        print("Flushing audio Stream")
         self.container.mux(self.output_audio_stream.encode())
-        print("Flushing video Stream")
         super(AudioVideoWriter, self).close()
 
 
@@ -115,10 +112,10 @@ class ImageSequenceReader(Dataset):
         self.path = path
         self.files = sorted(os.listdir(path))
         self.transform = transform
-        
+
     def __len__(self):
         return len(self.files)
-    
+
     def __getitem__(self, idx):
         with Image.open(os.path.join(self.path, self.files[idx])) as img:
             img.load()
@@ -133,13 +130,13 @@ class ImageSequenceWriter:
         self.extension = extension
         self.counter = 0
         os.makedirs(path, exist_ok=True)
-    
+
     def write(self, frames):
         # frames: [T, C, H, W]
         for t in range(frames.shape[0]):
             to_pil_image(frames[t]).save(os.path.join(
                 self.path, str(self.counter).zfill(4) + '.' + self.extension))
             self.counter += 1
-            
+
     def close(self):
         pass
