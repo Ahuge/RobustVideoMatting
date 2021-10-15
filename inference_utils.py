@@ -92,20 +92,6 @@ class AudioVideoWriter(VideoWriter):
             codec_name=self.source_audio_stream.codec_context.codec.name,
             rate=self.source_audio_stream.rate,
         )
-        self.remux_audio()
-
-    def write(self, frames, audio_frames=None):
-        # frames: [T, C, H, W]
-        self.stream.width = frames.size(3)
-        self.stream.height = frames.size(2)
-        if frames.size(1) == 1:
-            frames = frames.repeat(1, 3, 1, 1) # convert grayscale to RGB
-        frames = frames.mul(255).byte().cpu().permute(0, 2, 3, 1).numpy()
-        for t in range(frames.shape[0]):
-            # print("  Writing index: {}".format(t))
-            frame = frames[t]
-            frame = av.VideoFrame.from_ndarray(frame, format='rgb24')
-            self.container.mux(self.stream.encode(frame))
 
     def remux_audio(self):
         print("Remuxing Audio Stream #0")
@@ -115,11 +101,12 @@ class AudioVideoWriter(VideoWriter):
                 continue
             packet.stream = self.output_audio_stream
             self.container.mux(packet)
-        for packet in self.output_audio_stream.encode():
-            self.container.mux(packet)
 
     def close(self):
-        # self.remux_audio()
+        self.remux_audio()
+        print("Flushing audio Stream")
+        self.container.mux(self.output_audio_stream.encode())
+        print("Flushing video Stream")
         super(AudioVideoWriter, self).close()
 
 

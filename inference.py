@@ -79,16 +79,18 @@ def convert_video(model,
         transform = transforms.ToTensor()
 
     # Initialize reader
-    audio_source = None
     if os.path.isfile(input_source):
         source = VideoReader(input_source, transform)
-        container = av.open(input_source)
-        if container.streams.get(audio=0):
-            audio_source = container.streams.get(audio=0)[0]
     else:
         source = ImageSequenceReader(input_source, transform)
     reader = DataLoader(source, batch_size=seq_chunk, pin_memory=True, num_workers=num_workers)
-    
+
+    audio_source = None
+    if os.path.isfile(input_source):
+        container = av.open(input_source)
+        if container.streams.get(audio=0):
+            audio_source = container.streams.get(audio=0)[0]
+
     # Initialize writers
     if output_type == 'video':
         frame_rate = source.frame_rate if isinstance(source, VideoReader) else 30
