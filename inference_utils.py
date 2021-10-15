@@ -80,6 +80,36 @@ class ConstantImage(Dataset):
         return self.tensor
 
 
+class AudioVideoWriter(VideoWriter):
+    def __init__(self, path, frame_rate, audio_stream=None, bit_rate=1000000):
+        super(AudioVideoWriter, self).__init__(
+            path=path,
+            frame_rate=frame_rate,
+            bit_rate=bit_rate
+        )
+        self.source_audio_stream = audio_stream
+        self.output_audio_stream = self.container.add_stream(
+            codec_name=self.source_audio_stream.codec_context.codec.name,
+            rate=self.source_audio_stream.rate,
+        )
+
+    def remux_audio(self):
+        print("Remuxing Audio Stream #0")
+        input_audio_container = self.source_audio_stream.container
+        for packet in input_audio_container.demux(self.source_audio_stream):
+            if packet.dts is None:
+                continue
+            packet.stream = self.output_audio_stream
+            self.container.mux(packet)
+
+    def close(self):
+        self.remux_audio()
+        print("Flushing audio Stream")
+        self.container.mux(self.output_audio_stream.encode())
+        print("Flushing video Stream")
+        super(AudioVideoWriter, self).close()
+
+
 class ImageSequenceReader(Dataset):
     def __init__(self, path, transform=None):
         self.path = path
